@@ -23,17 +23,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: screens[currentIndex],
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
-        selectedItemColor: Colors.blue,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.blueAccent,
         unselectedItemColor: Colors.grey,
         onTap: (index) {
           setState(() {
             currentIndex = index;
           });
         },
-
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -59,25 +58,58 @@ class HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Center(
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 30),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(40),
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color.fromARGB(255, 138, 208, 240), Color.fromARGB(255, 25, 50, 92)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              "Emergency SOS",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-          ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AccidentReportScreen()),
-            );
-          },
-          child: const Text(
-            "SOS - Report Accident",
-            style: TextStyle(fontSize: 22, color: Colors.white),
-          ),
+            const SizedBox(height: 20),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 30),
+              child: Text(
+                "Press the button below to report an accident immediately.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: Colors.white70),
+              ),
+            ),
+            const SizedBox(height: 50),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                elevation: 8,
+              ),
+              icon: const Icon(Icons.warning, size: 28, color: Colors.white),
+              label: const Text(
+                "SOS - Report Accident",
+                style: TextStyle(fontSize: 22, color: Colors.white),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AccidentReportScreen()),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

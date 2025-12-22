@@ -1,18 +1,45 @@
-import '../models/user_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
-  // Simulate registered users
-  static final List<UserModel> _registeredUsers = [];
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Register a new user
-  static void registerUser(String email, String password) {
-    _registeredUsers.add(UserModel(id: email, name: password, email: email));
+  // REGISTER
+  static Future<void> register({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      throw Exception(e.message ?? "Registration failed");
+    }
   }
 
-  // Login check
-  static bool loginUser(String email, String password) {
-    return _registeredUsers.any(
-      (user) => user.id == email && user.name == password,
-    );
+  // LOGIN
+  static Future<void> login({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      throw Exception(e.message ?? "Login failed");
+    }
+  }
+
+  // LOGOUT
+  static Future<void> logout() async {
+    await _auth.signOut();
+  }
+
+  // CHECK LOGIN STATUS
+  static bool isLoggedIn() {
+    return _auth.currentUser != null;
   }
 }
