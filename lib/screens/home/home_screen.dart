@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../accident/accident_report_screen.dart';
 import '../home/history_screen.dart';
 import '../home/profile_screen.dart';
+import '../tracking/tracking_screen.dart'; // Adjust path if needed
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,6 +16,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> screens = [
     const HomeTab(),
+    const TrackingScreen(
+      trackingId: "AMB-2025-000101",
+      currentStatus: 1,
+    ),
     const HistoryScreen(),
     const ProfileScreen(),
   ];
@@ -37,6 +42,10 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: "Home",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_hospital),
+            label: "Tracking",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),

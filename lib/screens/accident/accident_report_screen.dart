@@ -20,21 +20,16 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
 
   File? pickedImage;
 
-  /// Decode image in background to reduce UI blocking
-  
-
-  /// Pick image from camera
   Future<void> _pickImage() async {
     try {
       final picker = ImagePicker();
       final image = await picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 80, // reduce image size for faster UI
+        imageQuality: 80,
       );
 
       if (!mounted || image == null) return;
 
-      // Offload heavy work to a background isolate
       File decodedImage = await compute((path) => File(path), image.path);
 
       setState(() {
@@ -47,11 +42,9 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
     }
   }
 
-  /// Get current location
   Future<void> _getLocation() async {
     try {
       String? address = await LocationService.getCurrentLocation();
-
       if (!mounted) return;
       setState(() {
         locationController.text = address ?? "Unable to fetch location";
@@ -66,7 +59,6 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
     }
   }
 
-  /// Pick date and time
   Future<void> _pickDateTime() async {
     try {
       DateTime? date = await showDatePicker(
@@ -99,7 +91,6 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
     }
   }
 
-  /// Submit report
   void _submitReport() {
     if (locationController.text.isEmpty ||
         timeController.text.isEmpty ||
@@ -132,64 +123,138 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Report Accident")),
+      appBar: AppBar(
+        title: const Text("Report Accident"),
+        backgroundColor: Colors.redAccent,
+        elevation: 0,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: locationController,
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: "Location",
-                      border: OutlineInputBorder(),
+            // Location Field
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15)),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: locationController,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: "Location",
+                          border: InputBorder.none,
+                          icon: Icon(Icons.location_on),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: _getLocation,
-                  child: const Text("Auto"),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: timeController,
-              readOnly: true,
-              decoration: InputDecoration(
-                labelText: "Time",
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.calendar_today),
-                  onPressed: _pickDateTime,
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: _getLocation,
+                      icon: const Icon(Icons.my_location, size: 18),
+                      label: const Text("Auto"),
+                    ),
+                  ],
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            Container(
-              height: 200,
-              width: double.infinity,
-              color: Colors.grey.shade300,
-              child: pickedImage == null
-                  ? const Center(child: Text("No image selected"))
-                  : Image.file(pickedImage!, fit: BoxFit.cover),
+
+            // Time Field
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15)),
+              child: TextField(
+                controller: timeController,
+                readOnly: true,
+                decoration: InputDecoration(
+                  labelText: "Time",
+                  border: InputBorder.none,
+                  icon: const Icon(Icons.access_time),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.calendar_today),
+                    onPressed: _pickDateTime,
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Image Picker
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15)),
+              child: Container(
+                height: 220,
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  color: Colors.grey.shade200,
+                ),
+                child: pickedImage == null
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.camera_alt, size: 50, color: Colors.grey),
+                            SizedBox(height: 8),
+                            Text("No image selected",
+                                style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                      )
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(pickedImage!, fit: BoxFit.cover),
+                      ),
+              ),
             ),
             const SizedBox(height: 10),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: _pickImage,
-              child: const Text("Capture Photo"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              icon: const Icon(Icons.camera_alt),
+              label: const Text("Capture Photo", style: TextStyle(fontSize: 16)),
             ),
             const SizedBox(height: 30),
+
+            // Submit Button
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
                 onPressed: _submitReport,
-                child: const Text("Submit Report"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Text(
+                  "Submit Report",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],

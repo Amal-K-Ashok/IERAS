@@ -9,28 +9,27 @@ class LoginScreen extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
- void _login(BuildContext context) async {
-  try {
-    await AuthService.login(
-      email: emailController.text.trim(),
-      password: passwordController.text.trim(),
-    );
+  void _login(BuildContext context) async {
+    try {
+      await AuthService.login(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
-    if (!context.mounted) return;
+      if (!context.mounted) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-    );
-  } catch (e) {
-    if (!context.mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.toString())),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -49,16 +48,31 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.local_hospital, size: 60, color: Colors.red),
+                  // 🔴 APP LOGO
+                  Image.asset(
+                    'assets/app_logo.png',
+                    height: 120,
+                  ),
+
                   const SizedBox(height: 10),
+
                   const Text(
                     "Emergency Assist",
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+
                   const SizedBox(height: 6),
-                  const Text("Login to continue",
-                      style: TextStyle(color: Colors.grey)),
+
+                  const Text(
+                    "Login to continue",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+
                   const SizedBox(height: 30),
+
                   TextField(
                     controller: emailController,
                     decoration: InputDecoration(
@@ -69,7 +83,9 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 20),
+
                   TextField(
                     controller: passwordController,
                     obscureText: true,
@@ -81,7 +97,9 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 30),
+
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -96,7 +114,9 @@ class LoginScreen extends StatelessWidget {
                       child: const Text("LOGIN"),
                     ),
                   ),
+
                   const SizedBox(height: 20),
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
