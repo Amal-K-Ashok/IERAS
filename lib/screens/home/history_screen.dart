@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../services/accident_service.dart';
 import '../../models/accident_model.dart';
@@ -8,73 +7,101 @@ class HistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get all stored accident reports
-    List<AccidentReport> reports = AccidentService.getAccidents();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("Accident History"),
+        backgroundColor: Colors.redAccent,
       ),
-
-      body: reports.isEmpty
-          ? const Center(
+      body: FutureBuilder<List<AccidentReport>>(
+        future: AccidentService.getAccidents(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(
               child: Text(
                 "No accident reports found",
                 style: TextStyle(fontSize: 18),
               ),
-            )
+            );
+          }
 
-          : ListView.builder(
-              itemCount: reports.length,
-              itemBuilder: (context, index) {
-                final report = reports[index];
+          final reports = snapshot.data!;
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+          return ListView.builder(
+            itemCount: reports.length,
+            itemBuilder: (context, index) {
+              final report = reports[index];
 
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(12),
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(12),
 
-                    // IMAGE
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        File(report.photoPath),
-                        width: 70,
-                        height: 70,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-
-                    // TEXT
-                    title: Text(
-                      report.location,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text("Time: ${report.time}"),
-                        const SizedBox(height: 2),
-                        Text(
-                          "Status: ${report.status}",
-                          style: const TextStyle(
-                            color: Colors.blueGrey,
-                            fontStyle: FontStyle.italic,
+                  // ✅ IMAGE FROM SERVER
+                  leading: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: report.photoPath.isNotEmpty
+                        ? Image.network(
+                            '${AccidentService.baseUrl}/${report.photoPath}',
+                            width: 70,
+                            height: 70,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 70,
+                                height: 70,
+                                color: Colors.grey,
+                                child: const Icon(
+                                  Icons.broken_image,
+                                  color: Colors.white,
+                                ),
+                              );
+                            },
+                          )
+                        : Container(
+                            width: 70,
+                            height: 70,
+                            color: Colors.grey,
+                            child: const Icon(
+                              Icons.image,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
                   ),
-                );
-              },
-            ),
+
+                  // ✅ TEXT DETAILS
+                  title: Text(
+                    report.location,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Text("Time: ${report.time}"),
+                      const SizedBox(height: 2),
+                      Text(
+                        "Status: ${report.status}",
+                        style: const TextStyle(
+                          color: Colors.blueGrey,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

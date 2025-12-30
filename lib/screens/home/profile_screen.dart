@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/user_service.dart';
 import '../../models/user_model.dart';
+import '../auth/login_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -12,12 +13,13 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Profile"),
+        centerTitle: true,
       ),
 
       body: user == null
           ? const Center(
               child: Text(
-                "No user data found.\nPlease register first.",
+                "No user data found.\nPlease login again.",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18),
               ),
@@ -25,102 +27,63 @@ class ProfileScreen extends StatelessWidget {
           : Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Profile Avatar
-                  Center(
-                    child: CircleAvatar(
-                      radius: 45,
-                      backgroundColor: Colors.blue,
-                      child: Text(
-                        user.name.isNotEmpty
-                            ? user.name[0].toUpperCase()
-                            : "?",
-                        style: const TextStyle(
-                          fontSize: 40,
-                          color: Colors.white,
-                        ),
+
+                  // 👤 PROFILE AVATAR
+                  CircleAvatar(
+                    radius: 45,
+                    backgroundColor: Colors.blue,
+                    child: Text(
+                      user.email.isNotEmpty
+                          ? user.email[0].toUpperCase()
+                          : "?",
+                      style: const TextStyle(
+                        fontSize: 40,
+                        color: Colors.white,
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 15),
 
-                  const Center(
-                    child: Text(
-                      "User Details",
+                  // 📧 EMAIL
+                  Text(
+                    user.email,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // 🚪 LOGOUT
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text(
+                      "Logout",
                       style: TextStyle(
-                        fontSize: 20,
+                        color: Colors.red,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
+                    onTap: () {
+                      // 1️⃣ Clear user session
+                      UserService.clearUser();
 
-                  const SizedBox(height: 20),
-
-                  _infoTile("User ID", user.id),
-                  _infoTile("Name", user.name),
-                  _infoTile("Email", user.email),
-
-                  const Spacer(),
-
-                  // LOGOUT BUTTON
-                  Center(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 40, vertical: 15),
-                      ),
-                      onPressed: () {
-                        UserService.clearUser();
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          "/register",
-                          (route) => false,
-                        );
-                      },
-                      child: const Text(
-                        "Logout",
-                        style: TextStyle(fontSize: 18, color: Colors.white),
-                      ),
-                    ),
+                      // 2️⃣ Navigate to login screen & clear stack
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => LoginScreen(),
+                        ),
+                        (route) => false,
+                      );
+                    },
                   ),
                 ],
               ),
             ),
-    );
-  }
-
-  // Reusable tile widget
-  Widget _infoTile(String title, String value) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade200),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "$title:",
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

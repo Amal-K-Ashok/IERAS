@@ -48,7 +48,6 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 🔴 APP LOGO
                   Image.asset(
                     'assets/app_logo.png',
                     height: 120,

@@ -8,11 +8,20 @@ class RegisterScreen extends StatelessWidget {
   final TextEditingController passwordController = TextEditingController();
 
   void _register(BuildContext context) async {
-    try {
-      await AuthService.register(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email and password cannot be empty")),
       );
+      return;
+    }
+
+    try {
+      await AuthService.register(email: email, password: password);
+
+      if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Account created successfully")),
@@ -20,6 +29,8 @@ class RegisterScreen extends StatelessWidget {
 
       Navigator.pop(context);
     } catch (e) {
+      if (!context.mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );

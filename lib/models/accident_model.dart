@@ -2,7 +2,7 @@ class AccidentReport {
   final String id;
   final String location;
   final String time;
-  final String photoPath;
+  final String photoPath; // server image path
   final String status;
 
   AccidentReport({
@@ -13,23 +13,13 @@ class AccidentReport {
     required this.status,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'location': location,
-      'time': time,
-      'photoPath': photoPath,
-      'status': status,
-    };
-  }
-
   factory AccidentReport.fromJson(Map<String, dynamic> json) {
     return AccidentReport(
-      id: json['id'],
-      location: json['location'],
-      time: json['time'],
-      photoPath: json['photoPath'],
-      status: json['status'],
+      id: json['id'].toString(),                // 🔥 int → String
+      location: json['location'] ?? '',
+      time: json['timestamp'].toString(),       // 🔥 backend uses timestamp
+      photoPath: json['image'] ?? '',           // 🔥 backend uses image
+      status: json['status'] ?? 'Pending',
     );
   }
 }

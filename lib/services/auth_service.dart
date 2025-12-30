@@ -1,45 +1,103 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/user_model.dart';
+import 'user_service.dart';
 
 class AuthService {
-  static final FirebaseAuth _auth = FirebaseAuth.instance;
+  // Base URL of your FastAPI backend
+  // Use localhost 10.0.2.2 for emulator or your ngrok URL for testing
+  static const String baseUrl =
+      "https://superlunary-misael-unbickered.ngrok-free.dev";
 
-  // REGISTER
+  /// -----------------------------
+  /// REGISTER
+  /// -----------------------------
   static Future<void> register({
     required String email,
     required String password,
   }) async {
-    try {
-      await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-    } on FirebaseAuthException catch (e) {
-      throw Exception(e.message ?? "Registration failed");
+    final url = Uri.parse('$baseUrl/register');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+
+    if (response.statusCode == 200) {
+      // Registration successful
+      return;
+    } else {
+      final data = jsonDecode(response.body);
+      throw Exception(data['detail'] ?? "Registration failed");
     }
   }
 
-  // LOGIN
-  static Future<void> login({
+  /// -----------------------------
+  /// LOGIN
+  /// -----------------------------
+  static Future<UserModel> login({
     required String email,
     required String password,
   }) async {
-    try {
-      await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
+    final url = Uri.parse('$baseUrl/login');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      // Create UserModel from response
+      final user = UserModel(
+        id: data['id'],
+        name: data['name'],
+        email: data['email'],
       );
-    } on FirebaseAuthException catch (e) {
-      throw Exception(e.message ?? "Login failed");
+
+      // Save user locally
+      UserService.saveUser(user);
+
+      return user;
+    } else {
+      final data = jsonDecode(response.body);
+      throw Exception(data['detail'] ?? "Login failed");
     }
   }
 
-  // LOGOUT
-  static Future<void> logout() async {
-    await _auth.signOut();
+  /// -----------------------------
+  /// RESET PASSWORD
+  /// -----------------------------
+  static Future<void> resetPassword({
+    required String email,
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final url = Uri.parse('$baseUrl/reset-password');
+
+    final response = await http.put(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['detail'] ?? "Failed to reset password");
+    }
   }
 
-  // CHECK LOGIN STATUS
-  static bool isLoggedIn() {
-    return _auth.currentUser != null;
+  /// -----------------------------
+  /// LOGOUT (CLEAR USER)
+  /// -----------------------------
+  static void logout() {
+    UserService.clearUser();
   }
 }
