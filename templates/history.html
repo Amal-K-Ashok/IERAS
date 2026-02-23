@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case History — {{ hospital_name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --red: #E63946;
+            --dark: #0D1117;
+            --card: #161B22;
+            --border: #30363D;
+            --text: #E6EDF3;
+            --muted: #8B949E;
+            --green: #3FB950;
+        }
+
+        body {
+            background: var(--dark);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+        }
+
+        nav {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-brand {
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            font-size: 16px;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+
+        .hos-badge {
+            background: rgba(230,57,70,0.12);
+            border: 1px solid rgba(230,57,70,0.3);
+            color: var(--red);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .nav-link {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover { color: var(--text); }
+
+        main { padding: 32px; max-width: 1000px; margin: 0 auto; }
+
+        .page-header {
+            margin-bottom: 28px;
+        }
+
+        .page-header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+        .page-header p { color: var(--muted); font-size: 14px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        thead th {
+            background: #1C2128;
+            padding: 12px 16px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--muted);
+            font-weight: 600;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+        td {
+            padding: 14px 16px;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        td.mono {
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-accepted {
+            background: rgba(63,185,80,0.12);
+            color: var(--green);
+            border: 1px solid rgba(63,185,80,0.3);
+        }
+
+        .status-rejected {
+            background: rgba(230,57,70,0.12);
+            color: var(--red);
+            border: 1px solid rgba(230,57,70,0.3);
+        }
+
+        .status-other {
+            background: rgba(139,148,158,0.12);
+            color: var(--muted);
+            border: 1px solid rgba(139,148,158,0.3);
+        }
+
+        .track-link {
+            color: var(--red);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            display: inline-flex; align-items: center; gap: 4px;
+            transition: opacity 0.2s;
+        }
+
+        .track-link:hover { opacity: 0.75; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+        .empty-state h3 { color: var(--text); font-size: 18px; margin-bottom: 6px; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-brand">🚑 IERAS</div>
+    <div class="nav-right">
+        <span class="hos-badge">🏥 {{ hospital_name }} (ID: {{ hospital_id }})</span>
+        <a href="/dashboard" class="nav-link">← Dashboard</a>
+        <a href="/logout" class="nav-link">Sign Out</a>
+    </div>
+</nav>
+
+<main>
+    <div class="page-header">
+        <h1>📜 Case History</h1>
+        <p>All past ambulance requests handled by your hospital</p>
+    </div>
+
+    {% if history %}
+    <table>
+        <thead>
+            <tr>
+                <th>Ambulance ID</th>
+                <th>Status</th>
+                <th>Date & Time</th>
+                <th>Coordinates</th>
+                <th>Track</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in history %}
+            <tr>
+                <td class="mono">{{ row.tracking_id }}</td>
+                <td>
+                    {% if row.status == 'ACCEPTED' %}
+                        <span class="status-chip status-accepted">✔ Accepted</span>
+                    {% elif row.status == 'REJECTED' %}
+                        <span class="status-chip status-rejected">✖ Rejected</span>
+                    {% else %}
+                        <span class="status-chip status-other">{{ row.status or '—' }}</span>
+                    {% endif %}
+                </td>
+                <td class="mono" style="font-size:12px;">{{ (row.created_at or '')[:16] }}</td>
+                <td class="mono" style="font-size:12px;">
+                    {% if row.latitude and row.longitude %}
+                        {{ "%.4f"|format(row.latitude) }}, {{ "%.4f"|format(row.longitude) }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td>
+                    {% if row.latitude and row.longitude %}
+                        <a class="track-link" href="/live/{{ row.tracking_id }}">🚑 Live Track</a>
+                    {% else %}
+                        <span style="color:var(--muted);font-size:13px;">Unavailable</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">📭</div>
+        <h3>No History Found</h3>
+        <p>Accepted or rejected cases will appear here.</p>
+    </div>
+    {% endif %}
+</main>
+</body>
+</html>
