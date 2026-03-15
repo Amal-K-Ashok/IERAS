@@ -1,7 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.user_app">
 
-    <!-- Permissions -->
+    <!-- REQUIRED INTERNET PERMISSION -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Other permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.CAMERA"/>
@@ -10,6 +13,11 @@
         android:name="${applicationName}"
         android:label="ambu-report"
         android:icon="@mipmap/ic_launcher">
+
+        <!-- Google Maps API Key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDZ4N3tuNyYaDD5IZF8V83753bYy2pB0EQ"/>
 
         <activity
             android:name=".MainActivity"
@@ -21,7 +29,6 @@
             android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode">
 
-            <!-- Flutter normal theme -->
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
@@ -33,14 +40,12 @@
 
         </activity>
 
-        <!-- Flutter embedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
 
     </application>
 
-    <!-- Required for text processing plugins -->
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

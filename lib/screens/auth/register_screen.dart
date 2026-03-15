@@ -1,38 +1,65 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../services/user_service.dart';
+import '../../models/user_model.dart';
+import '../auth/login_screen.dart'; // make sure path is correct
 
 class RegisterScreen extends StatelessWidget {
   RegisterScreen({super.key});
 
+  final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
 
-  void _register(BuildContext context) async {
+  final SupabaseClient supabase = Supabase.instance.client;
+
+  Future<void> _register(BuildContext context) async {
+    final name = nameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
+    final phone = phoneController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (name.isEmpty || email.isEmpty || password.isEmpty || phone.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email and password cannot be empty")),
+        const SnackBar(content: Text("All fields are required")),
       );
       return;
     }
 
     try {
-      await AuthService.register(email: email, password: password);
+      // Insert into Supabase user_regi table and get inserted row
+      final response = await supabase.from('user_regi').insert({
+        'name': name,
+        'email': email,
+        'password': password,
+        'phone': phone,
+        'created_at': DateTime.now().toIso8601String(),
+      }).select(); // returns inserted row
 
-      if (!context.mounted) return;
+      if (response != null && response.isNotEmpty) {
+        final user = UserModel.fromJson(response[0]);
+        UserService.saveUser(user); // Save user locally
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Account created successfully")),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Account created successfully! Please login."),
+          ),
+        );
 
-      Navigator.pop(context);
+        // Navigate to LoginScreen after registration
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Registration failed")),
+        );
+      }
     } catch (e) {
-      if (!context.mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(content: Text("Error: $e")),
       );
     }
   }
@@ -54,16 +81,40 @@ class RegisterScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.person_add, size: 60, color: Colors.red),
+                  const Icon(
+                    Icons.person_add,
+                    size: 60,
+                    color: Color(0xFF19325C),
+                  ),
                   const SizedBox(height: 10),
                   const Text(
                     "Create Account",
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 6),
-                  const Text("Register to continue",
-                      style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    "Register to continue",
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 30),
+
+                  // Name
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: "Full Name",
+                      prefixIcon: const Icon(Icons.person),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Email
                   TextField(
                     controller: emailController,
                     decoration: InputDecoration(
@@ -75,6 +126,21 @@ class RegisterScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
+
+                  // Phone
+                  TextField(
+                    controller: phoneController,
+                    decoration: InputDecoration(
+                      labelText: "Phone",
+                      prefixIcon: const Icon(Icons.phone),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Password
                   TextField(
                     controller: passwordController,
                     obscureText: true,
@@ -87,24 +153,42 @@ class RegisterScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 30),
+
+                  // REGISTER Button
                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: const Color(0xFF19325C),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       onPressed: () => _register(context),
-                      child: const Text("REGISTER"),
+                      child: const Text(
+                        "REGISTER",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
+
+                  // Back to Login
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text("Back to Login"),
+                    child: const Text(
+                      "Back to Login",
+                      style: TextStyle(
+                        color: Color(0xFF19325C),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),

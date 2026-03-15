@@ -5,10 +5,16 @@ import '../../services/accident_service.dart';
 import '../../services/location_service.dart';
 
 class AccidentReportScreen extends StatefulWidget {
-  const AccidentReportScreen({super.key});
+  final String userId;
+
+  const AccidentReportScreen({
+    super.key,
+    required this.userId,
+  });
 
   @override
-  State<AccidentReportScreen> createState() => _AccidentReportScreenState();
+  State<AccidentReportScreen> createState() =>
+      _AccidentReportScreenState();
 }
 
 class _AccidentReportScreenState extends State<AccidentReportScreen> {
@@ -18,7 +24,9 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
   File? pickedImage;
   bool isSubmitting = false;
 
-  // 📸 Capture image
+  double? latitude;
+  double? longitude;
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final image = await picker.pickImage(
@@ -33,22 +41,20 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
     });
   }
 
-  // 📍 Auto-detect location
   Future<void> _getLocation() async {
-    try {
-      final address = await LocationService.getCurrentLocation();
-      if (!mounted) return;
+    final locationData = await LocationService.getCurrentLocation();
 
+    if (locationData != null) {
       setState(() {
-        locationController.text = address ?? "Unable to detect location";
+        locationController.text = locationData['address'];
+        latitude = locationData['latitude'];
+        longitude = locationData['longitude'];
       });
-    } catch (e) {
+    } else {
       locationController.text = "Unable to detect location";
-      print("Location error: $e");
     }
   }
 
-  // ⏰ Pick date & time
   Future<void> _pickDateTime() async {
     DateTime? date = await showDatePicker(
       context: context,
@@ -57,14 +63,14 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
       lastDate: DateTime.now(),
     );
 
-    if (!mounted || date == null) return;
+    if (date == null) return;
 
     TimeOfDay? time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
     );
 
-    if (!mounted || time == null) return;
+    if (time == null) return;
 
     final dateTime = DateTime(
       date.year,
@@ -75,15 +81,51 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
     );
 
     setState(() {
-      timeController.text = dateTime.toIso8601String();
+      timeController.text = dateTime.toString();
     });
   }
 
-  // 🚨 Submit to backend
+  Widget buildSectionTitle(String text) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildCard({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade300,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
   Future<void> _submitReport() async {
-    if (locationController.text.trim().isEmpty ||
-        timeController.text.trim().isEmpty ||
-        pickedImage == null) {
+    if (locationController.text.isEmpty ||
+        timeController.text.isEmpty ||
+        pickedImage == null ||
+        latitude == null ||
+        longitude == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please complete all fields")),
       );
@@ -92,10 +134,12 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
 
     setState(() => isSubmitting = true);
 
-    // Submit report and get server response
     final result = await AccidentService.submitAccident(
-      location: locationController.text.trim(),
-      timestamp: timeController.text.trim(),
+      userId: widget.userId,
+      location: locationController.text,
+      latitude: latitude!,
+      longitude: longitude!,
+      timestamp: timeController.text,
       image: pickedImage!,
     );
 
@@ -103,43 +147,50 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
 
     if (!mounted) return;
 
-    // Show server response
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(result)));
 
-    if (result.toLowerCase().contains("success")) {
-      // Return true to indicate refresh is needed in history screen
+    if (result.contains("success")) {
       Navigator.pop(context, true);
     }
   }
 
   @override
-  void dispose() {
-    locationController.dispose();
-    timeController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF3EEFF),
       appBar: AppBar(
         title: const Text("Report Accident"),
-        backgroundColor: Colors.redAccent,
+        centerTitle: true,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color.fromARGB(255, 143, 82, 255),
+                Color.fromARGB(255, 90, 60, 255),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // 📍 Location
-            Card(
+
+            // LOCATION
+            buildSectionTitle("Accident Location"),
+            buildCard(
               child: ListTile(
-                leading: const Icon(Icons.location_on),
+                leading: const Icon(Icons.location_on, color: Colors.deepPurple),
                 title: TextField(
                   controller: locationController,
                   readOnly: true,
                   decoration: const InputDecoration(
-                    labelText: "Location",
+                    hintText: "Detect location",
                     border: InputBorder.none,
                   ),
                 ),
@@ -149,17 +200,19 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 15),
 
-            // ⏰ Time
-            Card(
+            const SizedBox(height: 25),
+
+            // TIME
+            buildSectionTitle("Accident Time"),
+            buildCard(
               child: ListTile(
-                leading: const Icon(Icons.access_time),
+                leading: const Icon(Icons.access_time, color: Colors.deepPurple),
                 title: TextField(
                   controller: timeController,
                   readOnly: true,
                   decoration: const InputDecoration(
-                    labelText: "Time",
+                    hintText: "Select date & time",
                     border: InputBorder.none,
                   ),
                 ),
@@ -169,56 +222,76 @@ class _AccidentReportScreenState extends State<AccidentReportScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
 
-            // 📸 Image preview
+            const SizedBox(height: 25),
+
+            // IMAGE SECTION
+            buildSectionTitle("Upload Evidence"),
             Container(
               height: 220,
               width: double.infinity,
               decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
                 color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.grey.shade300),
               ),
               child: pickedImage == null
                   ? const Center(
-                      child: Text(
-                        "No image selected",
-                        style: TextStyle(color: Colors.grey),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.camera_alt,
+                              size: 50, color: Colors.grey),
+                          SizedBox(height: 10),
+                          Text("No image selected",
+                              style: TextStyle(color: Colors.grey)),
+                        ],
                       ),
                     )
                   : ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(20),
                       child: Image.file(
                         pickedImage!,
                         fit: BoxFit.cover,
                       ),
                     ),
             ),
-            const SizedBox(height: 10),
+
+            const SizedBox(height: 15),
 
             ElevatedButton.icon(
               onPressed: _pickImage,
               icon: const Icon(Icons.camera_alt),
               label: const Text("Capture Photo"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 25, vertical: 12),
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
               ),
             ),
-            const SizedBox(height: 30),
 
-            // 🚀 Submit
+            const SizedBox(height: 40),
+
+            // SUBMIT BUTTON
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 55,
               child: ElevatedButton(
                 onPressed: isSubmitting ? null : _submitReport,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
+                  backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                 ),
                 child: isSubmitting
                     ? const CircularProgressIndicator(
-                        color: Colors.white,
-                      )
+                        color: Colors.white)
                     : const Text(
                         "Submit Report",
                         style: TextStyle(
