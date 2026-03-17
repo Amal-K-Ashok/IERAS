@@ -1,0 +1,3 @@
+uvicorn main:app --host 0.0.0.0 --port 10000 --reload
+ngrok http 1000
+AIzaSyDZ4N3tuNyYaDD5IZF8V83753bYy2pB0EQ
