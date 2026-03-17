@@ -212,6 +212,20 @@ def hospital_history():
         hospital_name=hospital_name
     )
 
+# ---------------- LIVE TRACK PAGE ----------------
+@app.route("/live_track/<tracking_id>")
+def live_track(tracking_id):
+    if "hospital_id" not in session:
+        return redirect(url_for("hospital_login"))
 
+    hospital_id = session["hospital_id"]
+    hospital_name = session.get("hospital_name", "")
+
+    return render_template(
+        "live_track.html",
+        tracking_id=tracking_id,
+        hospital_id=hospital_id,
+        hospital_name=hospital_name
+    )
 if __name__ == "__main__":
     app.run(debug=True)

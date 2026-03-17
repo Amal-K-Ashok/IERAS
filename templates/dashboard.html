@@ -591,32 +591,61 @@ async function fetchHospitalAndDraw(ambLat, ambLng) {
     try {
         const res = await fetch('/get_hospital_location');
         const hosp = await res.json();
+
         if (hosp.latitude && hosp.longitude) {
+
             const hospIcon = L.divIcon({
                 html: '🏥',
                 className: '',
                 iconSize: [28, 28],
                 iconAnchor: [14, 14]
             });
-            L.marker([hosp.latitude, hosp.longitude], {icon: hospIcon})
-                .addTo(modalMap)
-                .bindPopup(`🏥 ${hosp.Hos_name}`);
 
-            // Draw line
-            L.polyline([[ambLat, ambLng], [hosp.latitude, hosp.longitude]], {
-                color: '#E63946', weight: 2, dashArray: '6, 6', opacity: 0.7
+            const hospitalMarker = L.marker(
+                [hosp.latitude, hosp.longitude],
+                { icon: hospIcon }
+            ).addTo(modalMap)
+             .bindPopup(`🏥 ${hosp.Hos_name}`);
+
+            /* ---------------- ROUTE API ---------------- */
+
+            const url = `https://router.project-osrm.org/route/v1/driving/${ambLng},${ambLat};${hosp.longitude},${hosp.latitude}?overview=full&geometries=geojson`;
+
+            const response = await fetch(url);
+            const routeData = await response.json();
+
+            const route = routeData.routes[0];
+
+            /* draw real road route */
+
+            const routeLine = L.geoJSON(route.geometry, {
+                style: {
+                    color: "#E63946",
+                    weight: 4
+                }
             }).addTo(modalMap);
 
-            const dist = haversineKm(ambLat, ambLng, hosp.latitude, hosp.longitude);
-            document.getElementById('distValue').textContent = dist.toFixed(2) + ' km';
-            document.getElementById('distanceBar').style.display = 'flex';
+            /* show distance */
 
-            // Fit bounds
-            modalMap.fitBounds([[ambLat, ambLng], [hosp.latitude, hosp.longitude]], {padding: [40, 40]});
+            const distanceKm = route.distance / 1000;
+
+            document.getElementById("distValue").textContent =
+                distanceKm.toFixed(2) + " km";
+
+            document.getElementById("distanceBar").style.display = "flex";
+
+            /* fit map */
+
+            modalMap.fitBounds(routeLine.getBounds(), {
+                padding: [40,40]
+            });
+
         }
-    } catch(e) {}
-}
 
+    } catch(e) {
+        console.log(e);
+    }
+}
 async function updateLiveLocation(trackingId) {
     try {
         const res = await fetch(`/get_location/${trackingId}`);

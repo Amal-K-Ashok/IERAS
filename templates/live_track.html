@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Tracking — {{ tracking_id }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        body{
+            margin:0;
+            font-family:Arial, sans-serif;
+            background:#0D1117;
+            color:white;
+        }
+
+        header{
+            padding:15px 25px;
+            background:#161B22;
+            border-bottom:1px solid #30363D;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+
+        #map{
+            height:90vh;
+        }
+
+        .badge{
+            background:#E63946;
+            padding:6px 12px;
+            border-radius:20px;
+            font-size:14px;
+        }
+
+        a{
+            color:white;
+            text-decoration:none;
+        }
+
+        /* Distance + ETA box */
+
+       #infoBox{
+    position:fixed;
+    bottom:25px;
+    left:25px;
+    background:#161B22;
+    padding:14px 18px;
+    border-radius:12px;
+    border:1px solid #30363D;
+    font-size:15px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.5);
+    z-index:9999;
+}
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        🚑 Tracking: <span class="badge">{{ tracking_id }}</span>
+    </div>
+    <div>
+        🏥 {{ hospital_name }} |
+        <a href="/history">⬅ Back</a>
+    </div>
+</header>
+
+<div id="map"></div>
+
+<!-- Distance & ETA display -->
+<div id="infoBox">
+    <div>📏 Distance: <span id="distance">--</span></div>
+    <div>⏱ ETA: <span id="eta">--</span></div>
+</div>
+
+<script>
+
+let map = L.map('map').setView([11.25,75.78],13);
+
+let ambulanceMarker = null;
+let hospitalMarker = null;
+let routeLine = null;
+
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{ attribution:'© OpenStreetMap'}
+).addTo(map);
+
+
+/* Load hospital location */
+
+async function loadHospital(){
+
+    const res = await fetch('/get_hospital_location');
+    const data = await res.json();
+
+    if(data.latitude){
+
+        hospitalMarker = L.marker(
+            [data.latitude,data.longitude]
+        )
+        .addTo(map)
+        .bindPopup("🏥 "+data.Hos_name)
+        .openPopup();
+
+    }
+
+}
+
+
+/* Update ambulance location */
+
+async function updateLocation(){
+
+    const res = await fetch('/get_location/{{ tracking_id }}');
+    const data = await res.json();
+
+    if(!data.latitude) return;
+
+    const ambLatLng = [data.latitude,data.longitude];
+
+    if(!ambulanceMarker){
+
+        ambulanceMarker = L.marker(ambLatLng)
+        .addTo(map)
+        .bindPopup("🚑 Ambulance")
+        .openPopup();
+
+        map.setView(ambLatLng,14);
+
+    }
+    else{
+
+        ambulanceMarker.setLatLng(ambLatLng);
+
+    }
+
+    drawRoute(ambLatLng);
+
+}
+
+
+/* Draw road route */
+
+async function drawRoute(ambLatLng){
+
+    if(!hospitalMarker) return;
+
+    const hospLatLng = hospitalMarker.getLatLng();
+
+    const url =
+`https://router.project-osrm.org/route/v1/driving/${ambLatLng[1]},${ambLatLng[0]};${hospLatLng.lng},${hospLatLng.lat}?overview=full&geometries=geojson`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if(!data.routes) return;
+
+    const routeData = data.routes[0];
+
+    const route = routeData.geometry;
+
+    /* Distance */
+
+    const distanceKm = (routeData.distance/1000).toFixed(2);
+
+    /* ETA */
+
+    const durationMin = (routeData.duration/60).toFixed(0);
+
+    document.getElementById("distance").innerText =
+        distanceKm + " km";
+
+    document.getElementById("eta").innerText =
+        durationMin + " minutes";
+
+
+    if(routeLine){
+        map.removeLayer(routeLine);
+    }
+
+    routeLine = L.geoJSON(route,{
+        style:{
+            color:"#E63946",
+            weight:4
+        }
+    }).addTo(map);
+
+}
+
+
+/* Start tracking */
+
+loadHospital();
+
+updateLocation();
+
+setInterval(updateLocation,5000);
+
+</script>
+
+</body>
+</html>

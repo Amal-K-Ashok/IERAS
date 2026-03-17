@@ -216,7 +216,9 @@
                 </td>
                 <td>
                     {% if row.latitude and row.longitude %}
-                        <a class="track-link" href="/live/{{ row.tracking_id }}">🚑 Live Track</a>
+                        <a class="track-link" href="/live/{{ row.tracking_id }}">🚑 <a href="/live_track/{{ row.tracking_id }}" style="color:#E63946;text-decoration:none;">
+     Live Track
+</a></a>
                     {% else %}
                         <span style="color:var(--muted);font-size:13px;">Unavailable</span>
                     {% endif %}
